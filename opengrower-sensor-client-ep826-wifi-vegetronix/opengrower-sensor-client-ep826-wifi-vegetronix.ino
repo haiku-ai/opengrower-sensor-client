@@ -13,7 +13,7 @@
 #define LED_BUILTIN_2 D4
 
 // digital pins to turn sensors on/off
-#define TEMPERATURE_D D1 
+#define TEMPERATURE_D D1
 #define MOISTURE_D D2
 #define HUMIDITY_D D3
 #define LIGHT_D D5
@@ -34,7 +34,7 @@ class Sensor {
     String id;
     float temperature; // degrees farenheit
     float moisture;    // % volumetric water content
-    float humidity;    // % relative humidity 
+    float humidity;    // % relative humidity
     float light;       // lux
 
   public:
@@ -73,7 +73,7 @@ class Sensor {
     }
 
     String to_json() {
-      return "{\"id\":" + id + ","
+      return "{\"sensor\":\"" + id + "\","
              + "\"temperature\":" + temperature + ","
              + "\"moisture\":" + moisture + ","
              + "\"humidity\":" + humidity + ","
@@ -111,7 +111,7 @@ class SensorReader {
         digitalWrite(MOISTURE_D, HIGH);
         delay(500);
         float moisture = analogRead(MOISTURE_A) * (5.0 / 1023.0);
-        if (moisture >= 0 && moisture < 1.1) {
+        if (moisture >= 0.0 && moisture < 1.1) {
           sensor.set_moisture(10 * moisture - 1);
         } else if (moisture >= 1.1 && moisture < 1.3) {
           sensor.set_moisture(25 * moisture - 17.5);
@@ -122,7 +122,7 @@ class SensorReader {
         } else if (moisture >= 2.2 && moisture <= 3.0) {
           sensor.set_moisture(62.5 * moisture - 87.5);
         } else {
-          sensor.set_moisture(0.0); 
+          sensor.set_moisture(0.0);
         }
         digitalWrite(MOISTURE_D, LOW);
       }
@@ -146,7 +146,7 @@ class SensorReader {
     }
 };
 
-Sensor sensor("001");
+Sensor sensor("sensor001");
 
 void setup() {
 
@@ -189,7 +189,8 @@ void loop() {
     digitalWrite(LED_BUILTIN_2, HIGH);
     WiFiClient client;
     HTTPClient http;
-    http.begin(client, "http://" SERVER_ADDRESS "/soilsensor");
+    http.begin(client, "http://" SERVER_ADDRESS "/measurement");
+    http.addHeader("Content-Type", "application/json");
     int httpCode = http.POST(sensor.to_json());
     if (httpCode != 200) {
       if (DEBUG) {
@@ -201,8 +202,7 @@ void loop() {
   }
 
   if (DEBUG) {
-    Serial.println(sensor.to_string());
+    Serial.println(sensor.to_json());
   }
 
-  delay(1000);
 }
